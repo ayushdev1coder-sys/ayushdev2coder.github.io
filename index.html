@@ -1,524 +1,239 @@
+# GitHub Pages File Upload + Copy Link Website
+
+This works on GitHub Pages.
+
+Features:
+
+* Upload files
+* Show uploaded files
+* Copy file link button
+* Mobile friendly
+* No backend needed
+
+## Step 1 — Create `index.html`
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Neon Dash Mobile</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>File Upload Hub</title>
 
 <style>
-
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-touch-action:manipulation;
-}
-
 body{
-overflow:hidden;
-background:black;
-font-family:Arial,sans-serif;
+    margin:0;
+    font-family:Arial;
+    background:#111;
+    color:white;
+    text-align:center;
 }
 
-canvas{
-display:block;
-background:linear-gradient(#050510,#0d0d25);
+.container{
+    max-width:700px;
+    margin:auto;
+    padding:20px;
 }
 
-#ui{
-position:absolute;
-top:10px;
-left:10px;
-z-index:10;
-color:white;
+h1{
+    font-size:40px;
 }
 
-#score{
-font-size:32px;
-font-weight:bold;
-text-shadow:0 0 10px cyan;
+.upload-box{
+    background:#1e1e1e;
+    padding:30px;
+    border-radius:20px;
+    margin-top:20px;
 }
 
-#best{
-font-size:18px;
-color:#aaa;
-margin-top:5px;
-}
-
-#menu{
-position:absolute;
-width:100%;
-height:100%;
-display:flex;
-justify-content:center;
-align-items:center;
-flex-direction:column;
-background:rgba(0,0,0,0.7);
-backdrop-filter:blur(6px);
-z-index:20;
-color:white;
-text-align:center;
-padding:20px;
-}
-
-#menu h1{
-font-size:clamp(40px,8vw,90px);
-color:cyan;
-text-shadow:0 0 20px cyan;
-margin-bottom:20px;
-}
-
-#menu p{
-font-size:clamp(16px,3vw,24px);
-margin-bottom:20px;
+input{
+    margin-top:15px;
 }
 
 button{
-padding:15px 40px;
-font-size:22px;
-border:none;
-border-radius:15px;
-background:cyan;
-color:black;
-font-weight:bold;
-cursor:pointer;
-transition:0.3s;
+    padding:12px 20px;
+    border:none;
+    border-radius:12px;
+    background:#00bfff;
+    color:white;
+    cursor:pointer;
+    font-size:16px;
+    margin-top:10px;
 }
 
 button:hover{
-transform:scale(1.05);
-box-shadow:0 0 20px cyan;
+    background:#0095cc;
 }
 
-#mobileJump{
-position:absolute;
-bottom:20px;
-right:20px;
-width:100px;
-height:100px;
-border-radius:50%;
-background:rgba(0,255,255,0.2);
-border:3px solid cyan;
-display:flex;
-justify-content:center;
-align-items:center;
-color:white;
-font-size:22px;
-font-weight:bold;
-z-index:15;
-user-select:none;
+.file-card{
+    background:#222;
+    padding:15px;
+    border-radius:15px;
+    margin-top:15px;
+    word-break:break-word;
 }
 
-#mobileJump:active{
-transform:scale(0.9);
-background:rgba(0,255,255,0.5);
+.file-link{
+    color:#00bfff;
+    display:block;
+    margin-top:10px;
 }
 
+.copy-btn{
+    background:#28a745;
+}
+
+.copy-btn:hover{
+    background:#1f8337;
+}
+
+@media(max-width:600px){
+    h1{
+        font-size:30px;
+    }
+}
 </style>
 </head>
-
 <body>
 
-<div id="ui">
-<div id="score">0</div>
-<div id="best">Best: 0</div>
+<div class="container">
+    <h1>File Upload Hub</h1>
+
+    <div class="upload-box">
+        <input type="file" id="fileInput">
+        <br>
+        <button onclick="uploadFile()">Upload File</button>
+    </div>
+
+    <div id="files"></div>
 </div>
-
-<div id="menu">
-<h1>NEON DASH</h1>
-<p>Tap, Click, or Press SPACE to Jump</p>
-<button onclick="startGame()">START</button>
-</div>
-
-<div id="mobileJump">JUMP</div>
-
-<canvas id="game"></canvas>
 
 <script>
+let uploadedFiles = JSON.parse(localStorage.getItem("uploadedFiles")) || [];
 
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
+function renderFiles(){
+    const filesDiv = document.getElementById("files");
+    filesDiv.innerHTML = "";
 
-function resizeCanvas(){
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+    uploadedFiles.forEach((file, index)=>{
+        filesDiv.innerHTML += `
+        <div class="file-card">
+            <h3>${file.name}</h3>
+            <a class="file-link" href="${file.url}" target="_blank">Open File</a>
+            <button class="copy-btn" onclick="copyLink('${file.url}')">Copy Link</button>
+        </div>
+        `;
+    });
 }
 
-resizeCanvas();
+function uploadFile(){
+    const input = document.getElementById("fileInput");
+    const file = input.files[0];
 
-window.addEventListener("resize",resizeCanvas);
+    if(!file){
+        alert("Select a file first");
+        return;
+    }
 
-let score = 0;
-let best = localStorage.getItem("neonBest") || 0;
+    const reader = new FileReader();
 
-document.getElementById("best").innerText = "Best: " + best;
+    reader.onload = function(e){
+        const fileData = {
+            name:file.name,
+            url:e.target.result
+        };
 
-let gameStarted = false;
-let gameOver = false;
+        uploadedFiles.push(fileData);
+        localStorage.setItem("uploadedFiles", JSON.stringify(uploadedFiles));
 
-let speed = 7;
-let gravity = 0.8;
+        renderFiles();
 
-const player = {
-x:120,
-y:200,
-width:50,
-height:50,
-velocityY:0,
-jumpForce:-16,
-grounded:false,
-rotation:0,
-trail:[]
-};
+        alert("File uploaded!");
+    };
 
-const obstacles = [];
-const particles = [];
-const stars = [];
-
-for(let i=0;i<120;i++){
-
-stars.push({
-x:Math.random()*window.innerWidth,
-y:Math.random()*window.innerHeight,
-size:Math.random()*3
-});
-
+    reader.readAsDataURL(file);
 }
 
-function startGame(){
-
-document.getElementById("menu").style.display = "none";
-
-gameStarted = true;
-gameOver = false;
-
-resetGame();
-
-spawnObstacle();
-
-animate();
-
+function copyLink(link){
+    navigator.clipboard.writeText(link);
+    alert("Link copied!");
 }
 
-function resetGame(){
-
-score = 0;
-speed = 7;
-
-obstacles.length = 0;
-particles.length = 0;
-
-player.y = 200;
-player.velocityY = 0;
-player.rotation = 0;
-
-document.getElementById("score").innerText = score;
-
-}
-
-function jump(){
-
-if(player.grounded && !gameOver){
-
-player.velocityY = player.jumpForce;
-player.grounded = false;
-
-for(let i=0;i<12;i++){
-
-particles.push({
-x:player.x+20,
-y:player.y+50,
-vx:(Math.random()-0.5)*7,
-vy:Math.random()*-5,
-size:Math.random()*5+2,
-life:35
-});
-
-}
-
-}
-
-}
-
-document.addEventListener("keydown",(e)=>{
-
-if(e.code==="Space") jump();
-
-});
-
-document.addEventListener("click",()=>{
-
-jump();
-
-});
-
-document.getElementById("mobileJump").addEventListener("touchstart",(e)=>{
-
-e.preventDefault();
-jump();
-
-});
-
-function spawnObstacle(){
-
-if(gameOver) return;
-
-const size = Math.random()*40 + 40;
-
-obstacles.push({
-x:canvas.width + 100,
-y:canvas.height - 70 - size,
-width:size,
-height:size
-});
-
-setTimeout(spawnObstacle,1400 - Math.min(score*10,900));
-
-}
-
-function drawPlayer(){
-
-ctx.save();
-
-ctx.translate(
-player.x + player.width/2,
-player.y + player.height/2
-);
-
-ctx.rotate(player.rotation);
-
-ctx.fillStyle = "cyan";
-ctx.shadowBlur = 25;
-ctx.shadowColor = "cyan";
-
-ctx.fillRect(
--player.width/2,
--player.height/2,
-player.width,
-player.height
-);
-
-ctx.restore();
-
-}
-
-function updatePlayer(){
-
-player.velocityY += gravity;
-
-player.y += player.velocityY;
-
-player.rotation += 0.08;
-
-if(player.y + player.height >= canvas.height - 70){
-
-player.y = canvas.height - 70 - player.height;
-
-player.velocityY = 0;
-
-player.rotation = 0;
-
-player.grounded = true;
-
-}
-
-player.trail.push({
-x:player.x,
-y:player.y
-});
-
-if(player.trail.length > 10){
-
-player.trail.shift();
-
-}
-
-}
-
-function drawTrail(){
-
-for(let i=0;i<player.trail.length;i++){
-
-const t = player.trail[i];
-
-ctx.fillStyle = `rgba(0,255,255,${i/10})`;
-
-ctx.fillRect(t.x,t.y,player.width,player.height);
-
-}
-
-}
-
-function drawGround(){
-
-ctx.fillStyle = "#111";
-
-ctx.fillRect(0,canvas.height-70,canvas.width,70);
-
-for(let i=0;i<canvas.width;i+=60){
-
-ctx.fillStyle = "cyan";
-
-ctx.fillRect(i,canvas.height-70,30,4);
-
-}
-
-}
-
-function drawStars(){
-
-for(let s of stars){
-
-ctx.fillStyle = "white";
-
-ctx.globalAlpha = Math.random();
-
-ctx.fillRect(s.x,s.y,s.size,s.size);
-
-s.x -= 0.3;
-
-if(s.x < 0){
-
-s.x = canvas.width;
-
-s.y = Math.random()*canvas.height;
-
-}
-
-}
-
-ctx.globalAlpha = 1;
-
-}
-
-function updateObstacles(){
-
-for(let i=0;i<obstacles.length;i++){
-
-const o = obstacles[i];
-
-o.x -= speed;
-
-ctx.fillStyle = "red";
-
-ctx.shadowBlur = 20;
-ctx.shadowColor = "red";
-
-ctx.beginPath();
-
-ctx.moveTo(o.x,o.y+o.height);
-ctx.lineTo(o.x+o.width/2,o.y);
-ctx.lineTo(o.x+o.width,o.y+o.height);
-
-ctx.fill();
-
-if(
-player.x < o.x + o.width &&
-player.x + player.width > o.x &&
-player.y < o.y + o.height &&
-player.y + player.height > o.y
-){
-
-endGame();
-
-}
-
-if(o.x + o.width < 0){
-
-obstacles.splice(i,1);
-
-score++;
-
-speed += 0.15;
-
-document.getElementById("score").innerText = score;
-
-}
-
-}
-
-}
-
-function updateParticles(){
-
-for(let i=0;i<particles.length;i++){
-
-const p = particles[i];
-
-p.x += p.vx;
-p.y += p.vy;
-
-p.life--;
-
-ctx.fillStyle = "cyan";
-
-ctx.beginPath();
-ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
-ctx.fill();
-
-if(p.life <= 0){
-
-particles.splice(i,1);
-
-}
-
-}
-
-}
-
-function endGame(){
-
-gameOver = true;
-
-if(score > best){
-
-best = score;
-
-localStorage.setItem("neonBest",best);
-
-document.getElementById("best").innerText = "Best: " + best;
-
-}
-
-setTimeout(()=>{
-
-document.getElementById("menu").style.display = "flex";
-
-document.getElementById("menu").innerHTML = `
-<h1>GAME OVER</h1>
-<p>Score: ${score}</p>
-<button onclick="startGame()">PLAY AGAIN</button>
-`;
-
-},700);
-
-}
-
-function animate(){
-
-if(gameOver) return;
-
-ctx.clearRect(0,0,canvas.width,canvas.height);
-
-drawStars();
-
-drawGround();
-
-drawTrail();
-
-updatePlayer();
-
-drawPlayer();
-
-updateObstacles();
-
-updateParticles();
-
-requestAnimationFrame(animate);
-
-}
-
+renderFiles();
 </script>
 
 </body>
 </html>
+```
+
+---
+
+## Step 2 — Upload To GitHub
+
+1. Go to your repository
+2. Click `Add file`
+3. Click `Upload files`
+4. Upload `index.html`
+5. Click `Commit changes`
+
+---
+
+## Step 3 — Enable GitHub Pages
+
+1. Open repository `Settings`
+2. Click `Pages`
+3. Source = `Deploy from branch`
+4. Branch = `main`
+5. Click Save
+
+---
+
+## Your Website Link
+
+```text
+https://YOUR-USERNAME.github.io/
+```
+
+Example:
+
+```text
+https://ayushdev1coder-sys.github.io/
+```
+
+---
+
+## Important
+
+This version stores files in the browser using localStorage.
+
+That means:
+
+* Works without a server
+* Good for small files
+* Files stay on that browser
+* Not real cloud storage
+
+If you want:
+
+* Real online uploads
+* Public download links
+* Unlimited storage
+* User accounts
+
+Then you need:
+
+* Firebase
+* Supabase
+* Appwrite
+* Node.js server
+
+I can also make:
+
+* Drag and drop upload
+* File delete button
+* Image preview
+* PDF viewer
+* Dark neon design
+* Login system
+* Real cloud storage version
+* WhatsApp style file sharing
