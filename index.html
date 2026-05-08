@@ -56,6 +56,7 @@ button:hover{
     border-radius:15px;
     margin-top:15px;
     word-break:break-word;
+    transition:0.3s;
 }
 
 .file-link{
@@ -70,6 +71,11 @@ button:hover{
 
 .copy-btn:hover{
     background:#1f8337;
+}
+
+.master-mode{
+    border:2px solid red;
+    cursor:pointer;
 }
 
 @media(max-width:600px){
@@ -94,58 +100,111 @@ button:hover{
 </div>
 
 <script>
-let uploadedFiles = JSON.parse(localStorage.getItem("uploadedFiles")) || [];
+
+/* =========================
+   MASTER CODE
+========================= */
+
+const MASTER_CODE = "AYUSH123";
+
+/* =========================
+   STORAGE
+========================= */
+
+let uploadedFiles =
+JSON.parse(localStorage.getItem("uploadedFiles")) || [];
+
+let masterMode = false;
+
+/* =========================
+   RENDER FILES
+========================= */
 
 function renderFiles(){
+
     const filesDiv = document.getElementById("files");
+
     filesDiv.innerHTML = "";
 
     uploadedFiles.forEach((file, index)=>{
+
         filesDiv.innerHTML += `
-        <div class="file-card">
+        <div class="file-card ${masterMode ? 'master-mode' : ''}"
+             onclick="${masterMode ? `masterDelete(${index})` : ''}">
+
             <h3>${file.name}</h3>
 
-            <a class="file-link" href="${file.url}" target="_blank">Open File</a>
+            <a class="file-link"
+               href="${file.url}"
+               target="_blank">
 
-            <button class="copy-btn" onclick="copyLink('${file.url}')">
+               Open File
+
+            </a>
+
+            <button class="copy-btn"
+                    onclick="event.stopPropagation(); copyLink('${file.url}')">
+
                 Copy Link
+
             </button>
 
-            <button onclick="deleteFile(${index})">
+            <button onclick="event.stopPropagation(); deleteFile(${index})">
+
                 Delete File
+
             </button>
+
         </div>
         `;
     });
 }
 
+/* =========================
+   UPLOAD
+========================= */
+
 function uploadFile(){
+
     const input = document.getElementById("fileInput");
+
     const file = input.files[0];
 
     if(!file){
+
         alert("Select a file first");
+
         return;
     }
 
-    const deletePassword = prompt("Create a delete password for this file:");
+    const deletePassword =
+    prompt("Create a delete password for this file:");
 
     if(!deletePassword){
+
         alert("Password required");
+
         return;
     }
 
     const reader = new FileReader();
 
     reader.onload = function(e){
+
         const fileData = {
+
             name:file.name,
             url:e.target.result,
             password:deletePassword
+
         };
 
         uploadedFiles.push(fileData);
-        localStorage.setItem("uploadedFiles", JSON.stringify(uploadedFiles));
+
+        localStorage.setItem(
+            "uploadedFiles",
+            JSON.stringify(uploadedFiles)
+        );
 
         renderFiles();
 
@@ -155,25 +214,113 @@ function uploadFile(){
     reader.readAsDataURL(file);
 }
 
+/* =========================
+   NORMAL DELETE
+========================= */
+
 function deleteFile(index){
-    const enteredPassword = prompt("Enter delete password:");
+
+    const enteredPassword =
+    prompt("Enter delete password:");
 
     if(enteredPassword === uploadedFiles[index].password){
+
         uploadedFiles.splice(index, 1);
-        localStorage.setItem("uploadedFiles", JSON.stringify(uploadedFiles));
+
+        localStorage.setItem(
+            "uploadedFiles",
+            JSON.stringify(uploadedFiles)
+        );
+
         renderFiles();
+
         alert("File deleted!");
+
     }else{
+
         alert("Wrong password!");
     }
 }
 
+/* =========================
+   COPY LINK
+========================= */
+
 function copyLink(link){
+
     navigator.clipboard.writeText(link);
+
     alert("Link copied!");
 }
 
+/* =========================
+   CTRL + Q MASTER MODE
+========================= */
+
+document.addEventListener("keydown", function(event){
+
+    if(event.ctrlKey && event.key.toLowerCase() === "q"){
+
+        event.preventDefault();
+
+        const enteredCode =
+        prompt("Enter Master Code:");
+
+        if(enteredCode === MASTER_CODE){
+
+            masterMode = !masterMode;
+
+            renderFiles();
+
+            if(masterMode){
+
+                alert(
+                    "MASTER MODE ENABLED\n\nClick any file card to delete it instantly."
+                );
+
+            }else{
+
+                alert("MASTER MODE DISABLED");
+            }
+
+        }else{
+
+            alert("Wrong Master Code!");
+        }
+    }
+});
+
+/* =========================
+   MASTER DELETE
+========================= */
+
+function masterDelete(index){
+
+    const sure = confirm(
+        "Delete this file with MASTER CODE?"
+    );
+
+    if(sure){
+
+        uploadedFiles.splice(index, 1);
+
+        localStorage.setItem(
+            "uploadedFiles",
+            JSON.stringify(uploadedFiles)
+        );
+
+        renderFiles();
+
+        alert("File deleted instantly!");
+    }
+}
+
+/* =========================
+   START
+========================= */
+
 renderFiles();
+
 </script>
 
 </body>
