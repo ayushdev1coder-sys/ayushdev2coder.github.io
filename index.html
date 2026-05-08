@@ -3,321 +3,612 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>File Upload Hub</title>
+<title>Advanced File Upload Hub</title>
 
 <style>
+*{
+    box-sizing:border-box;
+}
+
 body{
     margin:0;
     font-family:Arial;
-    background:#111;
+    background:linear-gradient(135deg,#111,#1f1f1f);
     color:white;
-    text-align:center;
+    transition:0.3s;
+}
+
+body.light{
+    background:#f5f5f5;
+    color:#111;
 }
 
 .container{
-    max-width:700px;
+    max-width:1100px;
     margin:auto;
     padding:20px;
 }
 
 h1{
+    text-align:center;
     font-size:40px;
 }
 
-.upload-box{
-    background:#1e1e1e;
-    padding:30px;
-    border-radius:20px;
-    margin-top:20px;
+.top-bar{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    justify-content:center;
+    margin-bottom:20px;
 }
 
-input{
-    margin-top:15px;
+input,select{
+    padding:12px;
+    border:none;
+    border-radius:12px;
 }
 
 button{
-    padding:12px 20px;
+    padding:12px 18px;
     border:none;
     border-radius:12px;
     background:#00bfff;
     color:white;
     cursor:pointer;
-    font-size:16px;
-    margin-top:10px;
-}
-
-button:hover{
-    background:#0095cc;
-}
-
-.file-card{
-    background:#222;
-    padding:15px;
-    border-radius:15px;
-    margin-top:15px;
-    word-break:break-word;
     transition:0.3s;
 }
 
-.file-link{
-    color:#00bfff;
-    display:block;
+button:hover{
+    transform:scale(1.05);
+}
+
+.glass{
+    background:rgba(255,255,255,0.08);
+    backdrop-filter:blur(12px);
+    border-radius:20px;
+    padding:20px;
+}
+
+.upload-box{
+    text-align:center;
+    margin-bottom:20px;
+}
+
+.drop-zone{
+    border:2px dashed #00bfff;
+    padding:40px;
+    border-radius:20px;
+    margin-top:15px;
+}
+
+.progress-container{
+    width:100%;
+    background:#333;
+    border-radius:10px;
+    margin-top:15px;
+    overflow:hidden;
+}
+
+.progress-bar{
+    height:20px;
+    width:0%;
+    background:#00bfff;
+}
+
+.files-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+    gap:20px;
+}
+
+.file-card{
+    padding:15px;
+    border-radius:20px;
+    background:rgba(255,255,255,0.08);
+    backdrop-filter:blur(10px);
+    position:relative;
+}
+
+.preview-img,
+.preview-video,
+.preview-audio,
+.preview-pdf{
+    width:100%;
     margin-top:10px;
+    border-radius:10px;
 }
 
-.copy-btn{
+.file-icon{
+    font-size:40px;
+}
+
+.badge{
+    position:absolute;
+    top:10px;
+    right:10px;
     background:#28a745;
+    padding:5px 10px;
+    border-radius:10px;
+    font-size:12px;
 }
 
-.copy-btn:hover{
-    background:#1f8337;
+.badge.danger{
+    background:red;
 }
 
-.master-mode{
-    border:2px solid red;
-    cursor:pointer;
+.toast{
+    position:fixed;
+    bottom:20px;
+    right:20px;
+    background:#00bfff;
+    padding:15px;
+    border-radius:12px;
+    display:none;
+}
+
+.admin-panel{
+    margin-top:30px;
+    display:none;
+}
+
+.admin-card{
+    margin-top:15px;
+    padding:15px;
+    border-radius:15px;
+    background:#222;
 }
 
 @media(max-width:600px){
+
     h1{
-        font-size:30px;
+        font-size:28px;
     }
+
 }
 </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>File Upload Hub</h1>
 
-    <div class="upload-box">
-        <input type="file" id="fileInput">
-        <br>
-        <button onclick="uploadFile()">Upload File</button>
-    </div>
+<h1>Advanced File Upload Hub</h1>
 
-    <div id="files"></div>
+<div class="top-bar">
+
+<input type="text" id="search" placeholder="Search files..." onkeyup="renderFiles()">
+
+<select id="sort" onchange="renderFiles()">
+    <option value="date">Sort by Date</option>
+    <option value="name">Sort by Name</option>
+    <option value="size">Sort by Size</option>
+</select>
+
+<button onclick="toggleTheme()">Dark / Light</button>
+
+<button onclick="openAdmin()">Admin Dashboard</button>
+
 </div>
+
+<div class="upload-box glass">
+
+<input type="file" id="fileInput" multiple>
+
+<br><br>
+
+<select id="category">
+    <option>Images</option>
+    <option>Videos</option>
+    <option>Documents</option>
+    <option>Music</option>
+    <option>Other</option>
+</select>
+
+<br><br>
+
+<button onclick="uploadFiles()">Upload Files</button>
+
+<div class="drop-zone"
+     ondrop="dropHandler(event)"
+     ondragover="dragOverHandler(event)">
+
+    Drag & Drop Files Here
+
+</div>
+
+<div class="progress-container">
+    <div class="progress-bar" id="progressBar"></div>
+</div>
+
+</div>
+
+<div class="files-grid" id="files"></div>
+
+<div class="admin-panel glass" id="adminPanel">
+
+<h2>Admin Dashboard</h2>
+
+<div class="admin-card">
+    Total Files: <span id="totalFiles"></span>
+</div>
+
+<div class="admin-card">
+    Total Storage: <span id="totalStorage"></span>
+</div>
+
+<div class="admin-card">
+    Dangerous Files: <span id="dangerFiles"></span>
+</div>
+
+<button onclick="deleteAllFiles()">
+    Delete All Files
+</button>
+
+</div>
+
+</div>
+
+<div class="toast" id="toast"></div>
 
 <script>
 
-/* =========================
-   MASTER CODE
-========================= */
-
 const MASTER_CODE = "AYUSH123";
-
-/* =========================
-   STORAGE
-========================= */
 
 let uploadedFiles =
 JSON.parse(localStorage.getItem("uploadedFiles")) || [];
 
-let masterMode = false;
+function saveFiles(){
 
-/* =========================
-   RENDER FILES
-========================= */
+    localStorage.setItem(
+        "uploadedFiles",
+        JSON.stringify(uploadedFiles)
+    );
+}
+
+function showToast(message){
+
+    const toast = document.getElementById("toast");
+
+    toast.innerText = message;
+
+    toast.style.display = "block";
+
+    setTimeout(()=>{
+
+        toast.style.display = "none";
+
+    },3000);
+}
+
+function toggleTheme(){
+
+    document.body.classList.toggle("light");
+}
+
+function dragOverHandler(event){
+
+    event.preventDefault();
+}
+
+function dropHandler(event){
+
+    event.preventDefault();
+
+    document.getElementById("fileInput").files =
+    event.dataTransfer.files;
+
+    uploadFiles();
+}
+
+function aiSafetyCheck(file){
+
+    const dangerousExtensions = [
+        ".exe",
+        ".bat",
+        ".cmd",
+        ".vbs"
+    ];
+
+    const suspiciousWords = [
+        "virus",
+        "hack",
+        "malware",
+        "crack"
+    ];
+
+    let safe = true;
+
+    dangerousExtensions.forEach(ext=>{
+
+        if(file.name.toLowerCase().endsWith(ext)){
+            safe = false;
+        }
+    });
+
+    suspiciousWords.forEach(word=>{
+
+        if(file.name.toLowerCase().includes(word)){
+            safe = false;
+        }
+    });
+
+    return safe;
+}
+
+function uploadFiles(){
+
+    const files = document.getElementById("fileInput").files;
+
+    const category =
+    document.getElementById("category").value;
+
+    if(files.length === 0){
+
+        showToast("Select files first");
+
+        return;
+    }
+
+    let uploaded = 0;
+
+    Array.from(files).forEach(file=>{
+
+        const reader = new FileReader();
+
+        reader.onload = function(e){
+
+            uploaded++;
+
+            const progress =
+            (uploaded / files.length) * 100;
+
+            document.getElementById(
+                "progressBar"
+            ).style.width = progress + "%";
+
+            const safe = aiSafetyCheck(file);
+
+            uploadedFiles.push({
+
+                name:file.name,
+                url:e.target.result,
+                type:file.type,
+                size:file.size,
+                safe:safe,
+                category:category,
+                date:Date.now()
+
+            });
+
+            saveFiles();
+
+            renderFiles();
+
+            showToast(file.name + " uploaded");
+        };
+
+        reader.readAsDataURL(file);
+    });
+}
+
+function getFileIcon(type){
+
+    if(type.startsWith("image")) return "🖼️";
+
+    if(type.startsWith("video")) return "🎥";
+
+    if(type.startsWith("audio")) return "🎵";
+
+    if(type.includes("pdf")) return "📄";
+
+    return "📁";
+}
+
+function renderPreview(file){
+
+    if(file.type.startsWith("image")){
+
+        return `
+        <img class="preview-img"
+             src="${file.url}">
+        `;
+    }
+
+    if(file.type.startsWith("video")){
+
+        return `
+        <video class="preview-video"
+               controls>
+
+            <source src="${file.url}">
+
+        </video>
+        `;
+    }
+
+    if(file.type.startsWith("audio")){
+
+        return `
+        <audio class="preview-audio"
+               controls>
+
+            <source src="${file.url}">
+
+        </audio>
+        `;
+    }
+
+    if(file.type.includes("pdf")){
+
+        return `
+        <iframe class="preview-pdf"
+                height="250"
+                src="${file.url}">
+        </iframe>
+        `;
+    }
+
+    return "";
+}
 
 function renderFiles(){
 
     const filesDiv = document.getElementById("files");
 
+    const search =
+    document.getElementById("search")
+    .value
+    .toLowerCase();
+
+    const sort =
+    document.getElementById("sort").value;
+
+    let files = uploadedFiles.filter(file=>{
+
+        return file.name
+        .toLowerCase()
+        .includes(search);
+    });
+
+    if(sort === "name"){
+
+        files.sort((a,b)=>
+            a.name.localeCompare(b.name)
+        );
+    }
+
+    if(sort === "size"){
+
+        files.sort((a,b)=> b.size - a.size);
+    }
+
+    if(sort === "date"){
+
+        files.sort((a,b)=> b.date - a.date);
+    }
+
     filesDiv.innerHTML = "";
 
-    uploadedFiles.forEach((file, index)=>{
+    files.forEach((file,index)=>{
 
         filesDiv.innerHTML += `
-        <div class="file-card ${masterMode ? 'master-mode' : ''}"
-             onclick="${masterMode ? `masterDelete(${index})` : ''}">
+
+        <div class="file-card">
+
+            <div class="badge ${file.safe ? '' : 'danger'}">
+                ${file.safe ? 'SAFE' : 'DANGER'}
+            </div>
+
+            <div class="file-icon">
+                ${getFileIcon(file.type)}
+            </div>
 
             <h3>${file.name}</h3>
 
-            <a class="file-link"
-               href="${file.url}"
-               target="_blank">
+            <p>Category: ${file.category}</p>
 
-               Open File
+            <p>
+                Size:
+                ${(file.size / 1024).toFixed(2)} KB
+            </p>
 
+            ${renderPreview(file)}
+
+            <br>
+
+            <a href="${file.url}" download>
+                <button>Download</button>
             </a>
 
-            <button class="copy-btn"
-                    onclick="event.stopPropagation(); copyLink('${file.url}')">
-
-                Copy Link
-
-            </button>
-
-            <button onclick="event.stopPropagation(); deleteFile(${index})">
-
-                Delete File
-
+            <button onclick="deleteFile(${index})">
+                Delete
             </button>
 
         </div>
         `;
     });
+
+    updateAdminStats();
 }
-
-/* =========================
-   UPLOAD
-========================= */
-
-function uploadFile(){
-
-    const input = document.getElementById("fileInput");
-
-    const file = input.files[0];
-
-    if(!file){
-
-        alert("Select a file first");
-
-        return;
-    }
-
-    const deletePassword =
-    prompt("Create a delete password for this file:");
-
-    if(!deletePassword){
-
-        alert("Password required");
-
-        return;
-    }
-
-    const reader = new FileReader();
-
-    reader.onload = function(e){
-
-        const fileData = {
-
-            name:file.name,
-            url:e.target.result,
-            password:deletePassword
-
-        };
-
-        uploadedFiles.push(fileData);
-
-        localStorage.setItem(
-            "uploadedFiles",
-            JSON.stringify(uploadedFiles)
-        );
-
-        renderFiles();
-
-        alert("File uploaded!");
-    };
-
-    reader.readAsDataURL(file);
-}
-
-/* =========================
-   NORMAL DELETE
-========================= */
 
 function deleteFile(index){
 
-    const enteredPassword =
-    prompt("Enter delete password:");
+    uploadedFiles.splice(index,1);
 
-    if(enteredPassword === uploadedFiles[index].password){
+    saveFiles();
 
-        uploadedFiles.splice(index, 1);
+    renderFiles();
 
-        localStorage.setItem(
-            "uploadedFiles",
-            JSON.stringify(uploadedFiles)
+    showToast("File deleted");
+}
+
+function openAdmin(){
+
+    const code = prompt("Enter Admin Code:");
+
+    if(code === MASTER_CODE){
+
+        const panel = document.getElementById(
+            "adminPanel"
         );
 
-        renderFiles();
-
-        alert("File deleted!");
+        panel.style.display =
+        panel.style.display === "block"
+        ? "none"
+        : "block";
 
     }else{
 
-        alert("Wrong password!");
+        showToast("Wrong admin code");
     }
 }
 
-/* =========================
-   COPY LINK
-========================= */
+function updateAdminStats(){
 
-function copyLink(link){
+    document.getElementById(
+        "totalFiles"
+    ).innerText = uploadedFiles.length;
 
-    navigator.clipboard.writeText(link);
+    let total = 0;
 
-    alert("Link copied!");
+    uploadedFiles.forEach(file=>{
+
+        total += file.size;
+    });
+
+    document.getElementById(
+        "totalStorage"
+    ).innerText =
+    (total / 1024 / 1024).toFixed(2)
+    + " MB";
+
+    const dangerous = uploadedFiles.filter(file=>{
+
+        return !file.safe;
+
+    }).length;
+
+    document.getElementById(
+        "dangerFiles"
+    ).innerText = dangerous;
 }
 
-/* =========================
-   CTRL + Q MASTER MODE
-========================= */
-
-document.addEventListener("keydown", function(event){
-
-    if(event.ctrlKey && event.key.toLowerCase() === "q"){
-
-        event.preventDefault();
-
-        const enteredCode =
-        prompt("Enter Master Code:");
-
-        if(enteredCode === MASTER_CODE){
-
-            masterMode = !masterMode;
-
-            renderFiles();
-
-            if(masterMode){
-
-                alert(
-                    "MASTER MODE ENABLED\n\nClick any file card to delete it instantly."
-                );
-
-            }else{
-
-                alert("MASTER MODE DISABLED");
-            }
-
-        }else{
-
-            alert("Wrong Master Code!");
-        }
-    }
-});
-
-/* =========================
-   MASTER DELETE
-========================= */
-
-function masterDelete(index){
+function deleteAllFiles(){
 
     const sure = confirm(
-        "Delete this file with MASTER CODE?"
+        "Delete ALL files?"
     );
 
     if(sure){
 
-        uploadedFiles.splice(index, 1);
+        uploadedFiles = [];
 
-        localStorage.setItem(
-            "uploadedFiles",
-            JSON.stringify(uploadedFiles)
-        );
+        saveFiles();
 
         renderFiles();
 
-        alert("File deleted instantly!");
+        showToast("All files deleted");
     }
 }
-
-/* =========================
-   START
-========================= */
 
 renderFiles();
 
