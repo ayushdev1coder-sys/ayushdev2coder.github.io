@@ -375,6 +375,7 @@ function uploadFiles(){
                 size:file.size,
                 safe:safe,
                 category:category,
+                password:prompt("Create password for this file:"),
                 date:Date.now()
 
             });
@@ -532,13 +533,29 @@ function renderFiles(){
 
 function deleteFile(index){
 
-    uploadedFiles.splice(index,1);
+    const enteredPassword = prompt(
+        "Enter file password OR admin password:"
+    );
 
-    saveFiles();
+    const filePassword = uploadedFiles[index].password;
 
-    renderFiles();
+    if(
+        enteredPassword === filePassword ||
+        enteredPassword === MASTER_CODE
+    ){
 
-    showToast("File deleted");
+        uploadedFiles.splice(index,1);
+
+        saveFiles();
+
+        renderFiles();
+
+        showToast("File deleted");
+
+    }else{
+
+        showToast("Wrong password");
+    }
 }
 
 function openAdmin(){
